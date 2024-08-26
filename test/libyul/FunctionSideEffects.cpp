@@ -89,7 +89,7 @@ TestCase::TestResult FunctionSideEffects::run(std::ostream& _stream, std::string
 	if (!obj.hasCode())
 		BOOST_THROW_EXCEPTION(std::runtime_error("Parsing input failed."));
 
-	auto const& dialect = EVMDialect::strictAssemblyForEVMObjects(langutil::EVMVersion());
+	auto const& dialect = EVMDialect::strictAssemblyForEVMObjects(solidity::test::CommonOptions::get().evmVersion());
 	std::map<FunctionNameIdentifier, SideEffects> functionSideEffects = SideEffectsPropagator::sideEffects(
 		dialect,
 		CallGraphGenerator::callGraph(obj.code()->root())
