@@ -1119,16 +1119,70 @@ Json CompilerStack::ethdebug(Contract const& _contract, bool _runtime) const
 			[&]
 			{
 				Json result = Json::object();
-				result["ethdebug-runtime-data"] = true;
+				result["bytecode"] = ethdebugInstructions(_contract, true);
 				return result;
 			});
 	return _contract.ethdebug.init(
 		[&]
 		{
 			Json result = Json::object();
-			result["ethdebug-data"] = true;
+			result["bytecode"] = ethdebugInstructions(_contract, false);
 			return result;
 		});
+}
+
+Json CompilerStack::ethdebugInstructions(Contract const& _contract, bool _runtime) const
+{
+	evmasm::LinkerObject const* object;
+	evmasm::Assembly const* assembly;
+	if (_runtime)
+	{
+		object = &_contract.runtimeObject;
+		assembly = _contract.evmRuntimeAssembly.get();
+	}
+	else
+	{
+		object = &_contract.object;
+		assembly = _contract.evmAssembly.get();
+	}
+
+	Json instructions = Json::array();
+	for (size_t i = 0; i < object->offsets.size(); ++i)
+	{
+		size_t offset = object->offsets[i];
+		size_t nextOffset = offset;
+		if (i + 1 < object->offsets.size())
+			nextOffset = object->offsets[i + 1];
+		Json instruction = Json::object();
+		instruction["offset"] = offset;
+		instruction["mnemonic"] = instructionInfo(static_cast<evmasm::Instruction>(object->bytecode[offset]), m_evmVersion).name;
+		bytes argumentData;
+		for (size_t args = offset + 1; args < nextOffset; ++args)
+			argumentData.emplace_back(object->bytecode[args]);
+		if (!argumentData.empty())
+		{
+			Json arguments = Json::array();
+			arguments.emplace_back("0x" + util::toHex(argumentData));
+			instruction["arguments"] = arguments;
+		}
+
+		SourceLocation const& location = assembly->items().at(i).location();
+		Json instructionContext = Json::object();
+		Json source = Json::object();
+		source["id"] = location.sourceName ? static_cast<int>(sourceIndices()[*location.sourceName]) : static_cast<int>(-1);
+		Json range = Json::object();
+		range["offset"] = location.start;
+		range["length"] = location.end;
+		Json code = Json::object();
+		code["source"] = source;
+		code["range"] = range;
+		instructionContext["code"] = code;
+		instruction["context"] = instructionContext;
+		instructions.emplace_back(instruction);
+	}
+
+	// return evmAssembly->assemblyJSON(sourceIndices());
+	return instructions;
 }
 
 bytes CompilerStack::cborMetadata(std::string const& _contractName, bool _forIR) const
