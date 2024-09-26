@@ -51,6 +51,7 @@ public:
 	struct BlockId
 	{
 		size_t value = std::numeric_limits<size_t>::max();
+		bool hasValue() const { return value != std::numeric_limits<size_t>::max(); }
 		bool operator<(BlockId const& _rhs) const { return value < _rhs.value; }
 		bool operator==(BlockId const& _rhs) const { return value == _rhs.value; }
 		bool operator!=(BlockId const& _rhs) const { return value != _rhs.value; }
@@ -207,6 +208,7 @@ public:
 		return it->second;
 	}
 	ValueId lookupLiteral(yul::LiteralValue const& _literalValue) const;
+	std::optional<ValueId> zeroLiteral() const;
 
 	std::string toDot(bool _includeDiGraphDefinition=true, std::optional<size_t> _functionIndex=std::nullopt) const;
 private:
