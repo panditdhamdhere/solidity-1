@@ -169,6 +169,8 @@ private:
 	FunctionCallArguments parseFunctionCallArguments();
 	FunctionCallArguments parseNamedArguments();
 	std::pair<ASTPointer<ASTString>, langutil::SourceLocation> expectIdentifierWithLocation();
+
+	ASTPointer<Expression> parseContractStorageBaseLocationExpression();
 	///@}
 
 	///@{
